@@ -1,1 +1,10 @@
-Dane zostaly wczytane poprawnie!
+Ala ma kota, a kot ma Ale.
+Programowanie w jezyku C jest ciekawe.
+Ten wiersz nie zawiera szukanego slowa.
+Kot siedzi na parapecie i patrzy na ptaki.
+Biblioteka standardowa C zawiera funkcje strstr.
+Pies szczeka na listonosza.
+Moj kot lubi spac caly dzien.
+Plik tekstowy sluzy do testowania programu.
+Ostatnia linia: kotlet schabowy to tez "kot" w srodku!
+Koniec pliku.
