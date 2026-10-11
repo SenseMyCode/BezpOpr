@@ -1,0 +1,3 @@
+Ai napisała dla mnie kod, którego nie czytałem, miał być losowo albo z buffer overflow, albo nie
+Przetestowałem wgrywając plik loremipsum.txt
+okazało się, że kod nie był podatny na buffer overflow

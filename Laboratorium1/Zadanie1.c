@@ -27,7 +27,7 @@ int main() {
     char slowo[50];
 
     printf("\nPodaj slowo do wyszukania: ");
-    scanf("%s", slowo);
+    scanf("%49s", slowo);
 
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
         if (zawiera(buffer, slowo)) {
