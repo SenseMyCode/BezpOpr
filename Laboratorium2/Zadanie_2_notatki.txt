@@ -1,0 +1,32 @@
+Wszystko, co zaczyna się od kropki, to dyrektywy, czyli notatki dla assemblera
+Na działanie programu nie mają wpływu.
+
+Program startuje od main. Kod startowy Windowsa robi call main, więc na stosie leży już
+adres powrotu, a rip wskazuje na linię 7.
+
+Linie 7-11 to prolog, czyli budowanie ramki:
+- pushq %rbp zapisuje stare rbp na stosie,
+- movq %rsp, %rbp ustawia rbp na wierzch stosu,
+- subq $32, %rsp rezerwuje 32 bajty.
+main nie ma żadnych zmiennych lokalnych, więc te 32 bajty to sam shadow space.
+W Windowsie funkcja wywołująca musi go zostawić przed każdym call, żeby wywołana
+funkcja mogła tam odłożyć swoje argumenty z rejestrów.
+
+Linia 14:
+call __main wrzuca na stos adres powrotu i skacze do funkcji. __main przygotowuje
+środowisko i robi ret, czyli zdejmuje adres powrotu do rip. Wracamy do linii 15.
+
+Linie 15-16 (wypisanie znaku):
+movl $53, %ecx wkłada 53 do ecx. W Windowsie pierwszy argument idzie w rcx, a 53
+to w ASCII znak '5'. Jest movl i ecx zamiast rcx, bo putchar przyjmuje int, czyli
+4 bajty. Zapis do ecx i tak zeruje górną połowę rcx.
+call putchar wypisuje '5' na ekran. putchar zwraca w eax wypisany znak, ale wynik
+nie jest nigdzie używany.
+
+Linia 17:
+movl $0, %eax to return 0. Wynik funkcji zawsze zostaje w eax, a 0 oznacza OK.
+
+Linie 18-20 (epilog):
+- addq $32, %rsp zwalnia shadow space,
+- popq %rbp przywraca stare rbp,
+- ret wraca do kodu startowego Windowsa, który kończy proces z kodem 0.

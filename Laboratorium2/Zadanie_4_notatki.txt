@@ -1,0 +1,83 @@
+Przykład pierwszy:
+nop - nic nie robi
+
+Przykład drugi:
+Odwoływanie do zminnych lokalnych:
+asm("...." : : "jakaś litera" (nazwa zmiennej),...)
+Do zmiennej można się odwołać %(numer) np %0
+%%eax jako Odwoływanie
+
+Efektem kodu jest wartość a: 0 przed wykonaniem
+I wartość tej samej zmiennej po wykonaniu 0
+
+bo zmienna a jest traktowana jako wejściowa. 
+nie mozna jej zmieniac z poziomu inline-assemblera
+
+Przykład trzeci:
+wartości wyjściowe
+wszystko podobnie tylko uzywamy = przed okreslaniem 
+gdzie ma być załadowana zmienna
+np. "=r" (b)
+
+Wynik:
+Wartość a: 0  b: 0 przed wykonaniem
+I wartość tych samych zmiennych po wykonaniu a: 0 b: 1
+Zmienna a została jak poprzednio jako wejściowa
+Zmienna b wyjsciowa więc efekty zmian bedzie widać
+Załadowaliśmy liczbę 1 do zmiennej a
+a potem zmiennej b przypisaliśmy wartość a.
+Zarówno a i b przechowują się w rejestrach
+
+Przykład czwarty:
+To samo tylko deklarujemy a jako wejsciowa
+A dostaje dużą liczbę. To dlatego że zmienna b
+została załadowana do któregoś z rejestrów 32 bit
+instrukcja movw $1,%0 wprowadzilismy 16 bit liczbe
+zawartość ax jest 1, pozostała czesc eax bedzie miało
+wartość nieokreśloną
+
+Sposób pierwszy na naprawę:
+Czyścimy rejestr który przechowywał zmienna A
+Sposób drugi - gcc ma traktować argumenty
+jako liczby 32 bit (movl)
+
+Przykład ósmy:
+Obliczamy adres początku tablicy a i ładujemy do edx
+tak samo adres tablicy c
+adres tej drugiej zostaje złożony do rejestru ebx
+Ładujemy 1 do eax i 2 do ecx. Dwójka to liczba
+pętli które wykona program. Kolejna instrukcja to
+etykieta o nazwie petla1
+Stare wartosci odkładamy na stos, do ecx ładujemy dwójkę
+i mnożymy eax przez ecx. Wynik ma byc w rejestrze
+%eax:%edx. Pierwszy element to -8(%%edp) drugi to
+-4(%%ebp). Skoro %edx wskazuje na pierwszy element
+to zeby dostac sie do drugiego trzeba dodac 4 bajty
+Więc 4(%%edx) (typ int ma długość 4 bajtów). %eax
+zawiera w pierwszej pętli 2 a w drugiej zero więc najpierw
+odwołujemy się do %edx+2*2 czyli tak samo jak 4(%edx)
+czyli drugiego elementu tablicy a potem do
+%edx+0*2 czyli pierwszego
+wartość spod tego adresu (czyli element tablicy a)
+kopiujemy do %ecx. teraz trzeba policzyć gdzie ją
+zapisać w tablicy c. Odkładamy %ebx na stos, bo
+zaraz użyjemy go do obliczeń, a trzyma adres c.
+do %ebx ładujemy 2 i odejmujemy od niego %eax.
+w pierwszej pętli %eax=2 więc 2-2=0, w drugiej
+%eax=0 więc 2-0=2 wynik przenosimy do %eax i
+zdejmujemy ze stosu %ebx żeby znowu wskazywał na
+początek tablicy c, następnie zapisujemy %ecx pod
+adres %ebx+%eax*2 czyli w pierwszej pętli %ebx+0*2
+(pierwszy element c) a w drugiej %ebx+2*2 czyli
+4(%ebx) (drugi element c).
+Zdejmujemy ze stosu %ecx i %eax w odwrotnej
+kolejności niż je odkładaliśmy (LIFO), więc
+%ecx znowu jest licznikiem pętli a %eax indeksem.
+decl zmniejsza %eax o 1 więc w drugiej pętli %eax=0.
+loop zmniejsza %ecx o 1 i jeśli %ecx nie jest zerem
+skacze do etykiety petla1. Po dwóch obrotach %ecx=0
+i program wychodzi z pętli.
+W pierwszej pętli c0=a1 a w drugiej c1=a0
+czyli program kopiuje tablicę a do c w odwrotnej
+kolejności. Wynik: c[0]=12, c[1]=11.
+

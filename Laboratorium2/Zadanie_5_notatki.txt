@@ -1,0 +1,17 @@
+1. Przez rejestry
+Argumenty trafiają do rejestrów procesora. Najszybsza metoda
+ale jest mało rejestrów. Pierwsze cztery argumenty idą w 
+rcx,rdx,r8,9
+
+2. Przez stos
+Przed wywołaniem argumenty są odkładane na stos pushem.
+Funkcja odczytuje je względem ebp
+
+3. PRzez obszar pamięci (zmienne globalne lub blok parametrów)
+Wywołując zapisuje argumenty w ustalonym miejscu w pamięci a Funkcja
+stamtąd je czyta
+
+4. W kodzie zaraz za call
+Argumenty leżą w kodzie bezpośrednio za call. Funkcja odczytuje je
+spod adresu powrotu, potem przesuwa ten adres za dane, żeby nie wykonać
+ich jako instrukcji

@@ -1,0 +1,116 @@
+Program startuje od main. Kod startowy Windowsa robi call main, więc na stosie leży już
+adres powrotu, a rip wskazuje na linię 77.
+
+Pierwsze trzy instrukcje to prolog, czyli budowanie ramki:
+- pushq %rbp zapisuje stare rbp na stosie,
+- movq %rsp, %rbp ustawia rbp na wierzch stosu i od teraz to jest punkt odniesienia dla zmiennych,
+- subq $208, %rsp rezerwuje 208 bajtów dla main.
+Pod rbp-8 jest uchwyt pliku, od rbp-112 bufor na linijkę (100 bajtów), a od rbp-176
+bufor na słowo.
+
+Potem jest call __main. Call wrzuca na stos adres powrotu i skacze do funkcji. __main
+przygotowuje środowisko i robi ret, czyli zdejmuje adres powrotu do rip. Wracamy do
+linii 85. Każde wywołanie w programie działa tak samo.
+
+
+Linie 85-89 (otwarcie pliku):
+leaq nie czyta pamięci, tylko liczy adres. Do rdx idzie adres "r", a do rcx adres
+"test.txt". W Windowsie argumenty idą kolejno w rcx, rdx i r8. Po call fopen wynik
+jest w rax i od razu ląduje pod rbp-8, bo inaczej następne wywołanie by go nadpisało.
+
+Linie 90-92:
+Adres napisu "Podaj slowo do wyszukania" idzie do rcx i call printf go wypisuje.
+
+Linie 93-96 (scanf):
+Adres bufora rbp-176 idzie do rdx, a format "%49s" do rcx. scanf sam wpisuje bajty
+na stos main. Dla słowa kot w pamięci są bajty k, o, t i 0.
+
+Linia 97:
+jmp .L10 przeskakuje ciało pętli i idzie od razu do warunku w linii 109.
+
+Linie 110-115 (fgets):
+Uchwyt pliku idzie do r8, 100 do edx, a adres bufora rbp-112 do rcx. fgets wczytuje
+linijkę, np. xkot, czyli w pamięci są bajty x, k, o, t, \n i 0.
+Dla uproszczenia przyjmuję, że bufor z linijką ma adres 0x500, a bufor ze słowem 0x4C0.
+
+Linie 116-117:
+fgets zwraca adres bufora albo 0 na końcu pliku. testq %rax, %rax robi AND rejestru
+z samym sobą i ustawia tylko flagę ZF (ZF=1, gdy wynik to zero). Tutaj rax != 0,
+więc ZF=0 i jne .L11 skacze do linii 98.
+Każda decyzja w tym kodzie działa tak: test/cmp ustawia flagi, a je/jne na ich
+podstawie skacze albo nie.
+
+Linie 99-102:
+Do rdx idzie 0x4C0 (słowo), do rcx 0x500 (linijka) i jest call zawiera. Na stosie
+ląduje adres linii 103.
+
+
+Funkcja zawiera:
+Prolog jest taki sam jak w main, tylko rezerwuje 16 bajtów na dwie zmienne.
+W liniach 14-15 argumenty są zapisywane do pamięci: 0x500 pod rbp+16, a 0x4C0 pod
+rbp+24. To shadow space, który main zostawiła wolny (pod rbp+0 jest stare rbp, pod
+rbp+8 adres powrotu). Argumenty trafiają do pamięci, bo kod jest bez optymalizacji.
+
+Mamy więc cztery wskaźniki:
+- rbp+16 to pozycja startowa w tekście,
+- rbp+24 to początek słowa,
+- rbp-8  to p1, ruchomy wskaźnik w tekście,
+- rbp-16 to p2, ruchomy wskaźnik w słowie.
+
+Linia 16 -> 50:
+jmp .L2 przechodzi do sprawdzenia końca tekstu.
+- movq 16(%rbp), %rax wczytuje 0x500,
+- movzbl (%rax), %eax wczytuje bajt spod tego adresu (x),
+- testb %al, %al sprawdza, czy to zero.
+Nie jest, więc jne .L8 skacze do linii 17. Ten schemat (wskaźnik, potem bajt, potem
+test) to po prostu sprawdzanie końca napisu i powtarza się w całej funkcji.
+
+Linie 17-22:
+p1 = 0x500, p2 = 0x4C0. Kopiowanie idzie przez rax, bo mov nie może mieć pamięci
+jednocześnie jako źródła i celu. Potem jmp .L3 do linii 26.
+
+Linie 26-40 (porównanie):
+- pod p1 jest x, a nie 0, więc je w linii 30 nie skacze,
+- pod p2 jest k, a nie 0, więc je w linii 34 też nie skacze,
+- cmpb %al, %dl porównuje x i k. Są różne, więc ZF=0 i je .L5 nie skacze.
+Przechodzimy do .L4.
+
+Linie 41-45:
+Czy pod p2 jest 0? Nie, jest k, więc jne .L6 skacze do linii 48.
+
+Linia 49:
+addq $1, 16(%rbp) zmienia pozycję startową z 0x500 na 0x501, czyli przesuwa ją na
+następną literę. Wracamy do .L2.
+
+Druga próba:
+Pod 0x501 jest k, więc skok do .L8, gdzie p1 = 0x501 i p2 = 0x4C0. Teraz k == k,
+więc ZF=1 i je .L5 skacze. W liniach 24-25 oba wskaźniki rosną o 1 i jest powrót
+do .L3. To jest pętla: dalej porównywane są o z o i t z t. W czwartym obiegu p1
+wskazuje na \n, a p2 na 0, więc sprawdzenie w liniach 31-34 wykrywa koniec słowa
+i je .L4 wychodzi z pętli.
+
+Linie 41-47:
+Pod p2 jest 0, więc ZF=1 i jne .L6 nie skacze. movl $1, %eax ustawia wynik 1
+(znaleziono), a jmp .L7 idzie do końca funkcji.
+
+Linie 56-59 (epilog):
+- addq $16, %rsp zwalnia zmienne lokalne,
+- popq %rbp przywraca rbp main,
+- ret wraca do linii 103.
+Stos jest taki jak przed wywołaniem, a wynik zostaje w eax. p1 i p2 dalej fizycznie
+leżą w pamięci, ale są poniżej rsp, więc to już śmieci.
+
+
+Linie 103-108:
+testl %eax, %eax: eax = 1, więc ZF=0 i je .L10 nie skacze. Do rcx idzie "%s",
+do rdx bufor z linijką i printf ją wypisuje. Gdyby wynik był 0, printf zostałby
+przeskoczony.
+
+Koniec pętli:
+Znowu jest fgets, ale plik się skończył, więc rax = 0, ZF=1 i jne .L11 nie skacze.
+
+Linie 118-124:
+- uchwyt idzie do rcx i call fclose zamyka plik,
+- movl $0, %eax ustawia wynik programu na 0, czyli OK,
+- addq $208, %rsp i popq %rbp sprzątają ramkę,
+- ret wraca do kodu startowego Windowsa, który kończy proces.

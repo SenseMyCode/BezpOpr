@@ -1,0 +1,13 @@
+Wywołanie funkcja(1, 2) w main (linie 30-32):
+- movl $2, %edx wkłada drugi argument do edx,
+- movl $1, %ecx wkłada pierwszy argument do ecx.
+W Windowsie argumenty idą kolejno w rcx, rdx, r8, r9 (piąty i dalsze na stos).
+- call funkcja wrzuca na stos adres powrotu (linia 33) i skacze do funkcji (linia 6).
+
+W funkcji (linie 7-16):
+- pushq %rbp i movq %rsp, %rbp budują ramkę,
+- movl %ecx, 16(%rbp) i movl %edx, 24(%rbp) zapisują argumenty z rejestrów
+  do shadow space zostawionego przez main,
+- nop to puste ciało funkcji,
+- popq %rbp przywraca ramkę main,
+- ret zdejmuje adres powrotu do rip i wracamy do main (linia 33).
