@@ -15,3 +15,24 @@ stamtąd je czyta
 Argumenty leżą w kodzie bezpośrednio za call. Funkcja odczytuje je
 spod adresu powrotu, potem przesuwa ten adres za dane, żeby nie wykonać
 ich jako instrukcji
+
+1. Rejestry (Windows x64), suma(2, 3):
+    movl $3, %edx
+    movl $2, %ecx
+    call suma            ; w funkcji: movl %ecx,%eax / addl %edx,%eax
+
+2. Stos (32 bit, cdecl):
+    pushl $3             ; argumenty od końca
+    pushl $2
+    call suma            ; w funkcji: 8(%ebp) = 2, 12(%ebp) = 3
+    addl $8, %esp        ; stos sprząta wywołujący
+
+3. Obszar pamięci:
+    movl $2, param1
+    movl $3, param2
+    call suma            ; funkcja czyta param1 i param2
+
+4. Dane za call:
+    call suma
+    .long 2, 3           ; funkcja bierze adres powrotu ze stosu,
+                         ; czyta 2 liczby i dodaje 8 do adresu powrotu
