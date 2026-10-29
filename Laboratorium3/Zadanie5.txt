@@ -1,0 +1,7 @@
+Na dysku HDD wystarczy nadpisać cały nośnik albo użyć ATA Secure Erase. Ostateczne metody to degausser lub fizyczne zniszczenie. 
+Problemem są realokowane sektory, ukryte obszary HPA/DCO oraz kopie danych w kronice systemu plików i backupach.
+
+Na SSD/flash nadpisywanie nie działa, bo wear leveling i overprovisioning przekierowują zapis do innych komórek. 
+Trzeba użyć Secure Erase lub NVMe Sanitize, przy czym firmware bywa wadliwy, albo fizycznie zniszczyć kości pamięci.
+
+Najlepsze podejście to szyfrowanie nośnika od początku i skasowanie samego klucza (crypto-shredding).

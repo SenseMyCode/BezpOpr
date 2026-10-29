@@ -1,0 +1,17 @@
+Fragment kodu który powoduje problem
+
+memcpy(bp, pl, payload);
+
+Pliki: t1_lib.c oraz d1_both.c
+
+Źródło: https://medium.com/@misterxcrypt/heartbleed-a-deep-dive-into-cve-2014-0160-9b9f730601ec
+oraz https://en.wikipedia.org/wiki/Heartbleed
+
+Ta podatność pozwala atakującemu zdobyć informacje z pamięci servera poprzez exploit prostej funkcjonalności w OpenSSL Heartbeat request.
+Normalnie client wysyła heartbeat request na server który zawiera mały payload i wielkość payloadu. Server przechowuje payload w pamięci
+następnie czyta i zwraca dane z pamięci bazując na wielkości określonej przez request.
+Exploit - atakujący wysyła heartbeat request z małym payloadem ale ustawia że wielkość payloadu jest dużo większa. Podatny server przechowuje mniejszy payload
+w pamięci. Kiedy przetwarza odpowiedź server zwraca dane z pamięci na podstawie większego zadeklarowanego payloadu więc zwraca dodatkowe dane z pamięci serwera
+Te dodatkowe dane mogą zawierać bardzo wrażliwe dane jak klucze prywatne czy user credentials
+
+Poprawa - można nie zezwalać na requesty które deklarują większy payload niż on potrzebuje

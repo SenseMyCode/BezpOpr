@@ -1,0 +1,10 @@
+mlock(addr, len) blokuje wskazany zakres pamięci w RAM, więc te strony nie trafią do pliku wymiany.
+munlock(addr, len) zdejmuje tę blokadę.
+mlockall(flags) blokuje całą pamięć procesu: MCL_CURRENT obecną, MCL_FUTURE także przyszłą.
+munlockall() zdejmuje wszystkie blokady procesu.
+
+Java: zaalokować pamięć poza stertą GC (ByteBuffer.allocateDirect lub FFM API w Javie 22+) i 
+wywołać na niej natywne mlock przez JNA/JNI. Sekrety trzymać w byte[]/char[] zamiast String i czyścić przez Arrays.fill.
+
+C#: przypiąć tablicę, żeby GC jej nie przesuwał (GC.AllocateArray<byte>(n, pinned: true) lub GCHandle z Pinned), 
+wywołać VirtualLock/mlock przez P/Invoke i zerować przez CryptographicOperations.ZeroMemory.

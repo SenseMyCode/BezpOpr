@@ -1,0 +1,9 @@
+1. Zrzut pamięci: wyłączyć core dumpy i debugowanie procesu (setrlimit(RLIMIT_CORE, 0), prctl(PR_SET_DUMPABLE, 0), madvise(MADV_DONTDUMP)).
+2. Plik wymiany: zablokować strony z kluczami w RAM przez mlock (Windows: VirtualLock) albo szyfrować swap losowym kluczem.
+3. Hibernacja: wyłączyć hibernację lub szyfrować cały dysk razem z obrazem hibernacji (BitLocker/LUKS).
+4. Odczyt RAM po restarcie (cold boot): zerować klucze przed wyłączeniem i stosować sprzętowe szyfrowanie pamięci (AMD SME, Intel TME) lub trzymać klucz w rejestrach CPU (TRESOR).
+5. Maszyna wirtualna/chmura: użyć confidential computing (AMD SEV-SNP, Intel TDX, SGX) albo HSM/KMS, z którego klucz nigdy nie wychodzi.
+
+Szybkie znajdowanie kluczy: dla każdego przesunięcia w zrzucie liczy się harmonogram kluczy AES z kolejnych 16/32 bajtów i porównuje z bajtami, 
+które następują dalej (aeskeyfind). Zgodność oznacza, że znaleziono klucz razem z kluczami rundowymi. Kandydatów zawęża się wcześniej, szukając obszarów o wysokiej entropii. 
+Ochrona: nie przechowywać rozwiniętego harmonogramu, tylko liczyć go w locie. Klucz trzymać zamaskowany lub podzielony na części (K = A ⊕ B) i jak najkrócej.
